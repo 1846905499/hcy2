@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.city.hcy.mapper.ReportMapper">
+
+    <resultMap id="BaseResultMap" type="com.city.hcy.model.Report">
+        <id column="reportid" property="reportid"/>
+        <result column="postid" property="postid"/>
+        <result column="replyid" property="replyid"/>
+        <result column="userid" property="userid"/>
+        <result column="reporttype" property="reporttype"/>
+        <result column="reportreason" property="reportreason"/>
+
+        <result column="reporttime" property="reporttime"></result>
+    </resultMap>
+
+    <select id="selectListByAllWithPage" resultMap="BaseResultMap">
+        select *
+        from report
+            where replyid=0 and deleted=0
+            order by reporttime DESC
+        limit #{start}
+            , #{rows}
+    </select>
+
+
+    <select id="selectReplyListByAllWithPage" resultMap="BaseResultMap">
+        select *
+        from report
+        where postid=0 and deleted=0
+        order by reporttime DESC
+            limit #{start}
+            , #{rows}
+
+    </select>
+
+<select id="selectPostListByAllWithPageover" resultMap="BaseResultMap">
+    select *
+    from report
+    where replyid=0 and deleted=1
+    order by reporttime DESC
+        limit #{start}
+           , #{rows}
+</select>
+
+   <select id="selectReplyListByAllWithPageover" resultMap="BaseResultMap">
+       select *
+       from report
+       where postid=0 and deleted=1
+       order by reporttime DESC
+           limit #{start}
+              , #{rows}
+
+   </select>
+
+
+    <insert id="insert" parameterType="com.city.hcy.model.Report">
+
+        INSERT INTO `report`
+            (postid, replyid, userid, reporttype, reportreason)
+        VALUES (#{postid}, #{replyid}, #{userid}, #{reporttype}, #{reportreason});
+
+    </insert>
+
+<update id="delete">
+
+    UPDATE `root123`.`report` SET `deleted` = '1' WHERE `reportid` = #{reportid};
+</update>
+
+
+</mapper>

@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.city.hcy.mapper.ReplyMapper">
+    <resultMap id="BaseResultMap" type="com.city.hcy.model.Reply">
+        <id column="replyid" jdbcType="INTEGER" property="replyid"/>
+        <result column="postid" jdbcType="INTEGER" property="postid"/>
+        <result column="replytext" jdbcType="VARCHAR" property="replytext"/>
+        <result column="replytime" jdbcType="TIMESTAMP" property="replytime"/>
+        <result column="roleid" jdbcType="INTEGER" property="roleid"/>
+        <result column="starcount" jdbcType="INTEGER" property="starcount"/>
+        <result column="userid" jdbcType="INTEGER" property="userid"/>
+        <result column="replyfloor" property="replyfloor"></result>
+        <result column="replyObjectId" property="replyObjectId"/>
+        <result column="replyObjectFloor" property="replyObjectFloor"></result>
+ <result column="replyObjectRead" property="replyObjectRead"></result>
+        <result column="replyObjectRoleid" property="replyObjectRoleid"></result>
+
+    </resultMap>
+
+    <resultMap id="BaseResultMapWithUser" type="Reply" extends="BaseResultMap">
+        <association property="user" resultMap="com.city.hcy.mapper.UserMapper.BaseResultMap"/>
+    </resultMap>
+
+
+    <resultMap id="BaseResultMapWithUserAndPost" type="Reply" extends="BaseResultMapWithUser">
+        <association property="post" resultMap="com.city.hcy.mapper.PostMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMapWithUserAndPostAndNumber" type="java.util.Map" extends="BaseResultMapWithUserAndPost">
+        <result property="floor" column="rownum"/>
+
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+        replyid
+        , postid, replytext, replytime, roleid, starcount, userid
+    </sql>
+<update id="updatefloor">
+
+    SET @uid=0;
+SET @rid=0;
+    SELECT replyobjectid FROM reply WHERE replyid=#{replyid} INTO @uid;
+    SELECT replyfloor FROM reply WHERE replyid=@uid INTO @rid;
+    UPDATE reply SET replyobjectfloor=@uid WHERE replyid=#{replyid}
+</update>
+
+
+<select id="selectListByReplyid" resultMap="BaseResultMap">
+    SELECT *
+    FROM reply
+
+
+    WHERE replyid IN
+    <foreach collection="replyid" open="(" separator="," close=")" item="replyid">
+        #{replyid}
+    </foreach>
+
+    and deleted=0
+    ORDER BY replytime
+</select>
+
+    <select id="selectCountByIDAndreplyobject" resultType="_int">
+        select count(*)
+        from reply
+        where userid = #{userid}
+          and replyObjectRead = 0
+          and deleted=0
+        ORDER BY replytime desc
+    </select>
+
+    <select id="selectListByuseridAndreplyobject" resultMap="BaseResultMap">
+        select *
+        from reply
+        where userid = #{userid}
+          and replyObjectRead = 0
+          and deleted=0
+        ORDER BY replytime desc
+            limit #{start}
+            , #{rows}
+
+    </select>
+
+    <select id="selectListByIDWithFrontPage" resultMap="BaseResultMapWithUserAndPost">
+
+        SELECT r.*, p.*, u.*
+        FROM reply r
+                 INNER JOIN USER u
+                            ON r.userid = u.userid
+                 INNER JOIN post p ON p.postid = r.postid
+
+        WHERE p.postid = #{postid}
+          and r.deleted=0
+        ORDER BY r.replytime
+            LIMIT 0
+               , #{page}
+
+    </select>
+
+    <select id="selectListByAllWithPage" resultMap="BaseResultMapWithUserAndPost">
+
+
+        SELECT r.*,p.*, u.*
+        FROM reply r
+            INNER JOIN USER u
+        ON r.userid = u.userid
+            INNER JOIN post p ON p.postid = r.postid
+
+        WHERE p.postid = #{postid}
+          and r.deleted=0
+        ORDER BY r.replytime
+            limit #{start}
+               , #{rows}
+
+
+    </select>
+
+
+    <select id="selectCountByAll" resultType="_int">
+        select count(*)
+        from reply
+
+        where postid = #{postid}
+          and deleted=0
+    </select>
+
+
+    <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from reply
+        where replyid = #{replyid,jdbcType=INTEGER}
+        and deleted=0
+    </select>
+    <select id="selectListByIDWithPage" resultMap="BaseResultMapWithUserAndPost">
+
+        SELECT r.*, p.*, u.*
+        FROM reply r
+                 INNER JOIN USER u
+                            ON r.userid = u.userid
+                 INNER JOIN post p ON p.postid = r.postid
+
+        WHERE r.userid = #{userid}
+          and r.deleted=0
+        ORDER BY r.replytime desc
+            LIMIT #{start}
+               , #{rows}
+    </select>
+
+    <select id="selectListByIDWithPageDeleted" resultMap="BaseResultMap">
+        select * from reply where deleted=1 ORDER BY replytime DESC
+        LIMIT #{start}
+               , #{rows}
+
+    </select>
+
+    <select id="selectCountDeleted" resultType="java.lang.Integer">
+        select count(*)
+        from reply
+        where  deleted=1
+    </select>
+
+    <select id="selectCountByID" resultType="java.lang.Integer">
+        select count(*)
+        from reply
+        where userid = #{userid}
+          and deleted=0
+    </select>
+
+    <insert id="insert" parameterType="com.city.hcy.model.Reply">
+
+        SET @floor=0;
+
+
+        SELECT @floor:=if(MAX(replyfloor) is null,1,MAX(replyfloor)+1) FROM `reply`  WHERE postid=#{postid};
+
+        set @pid=0;
+        select @pid:=replyfloor from reply where replyid=#{replyObjectId};
+        set @replyObjectRoleid=0;
+        select @replyObjectRoleid:=Roleid from reply where replyid=#{replyObjectId};
+
+        insert into reply
+
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="replyid != null">
+                replyid,
+            </if>
+            <if test="postid != null">
+                postid,
+            </if>
+            <if test="replytext != null">
+                replytext,
+            </if>
+            <if test="roleid != null">
+                roleid,
+            </if>
+            <if test="starcount != null">
+                starcount,
+            </if>
+            <if test="replyfloor != null">
+                replyfloor,
+            </if>
+            <if test="replyObjectId != null">
+                replyObjectId,
+            </if>
+            <if test="replyObjectFloor!=null">
+                replyobjectfloor,
+            </if>
+            <if test="userid != null">
+                userid,
+            </if>
+            <if test="replyObjectRoleid!=null">
+                replyObjectRoleid,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="replyid != null">
+                #{replyid},
+            </if>
+            <if test="postid != null">
+                #{postid},
+            </if>
+            <if test="replytext != null">
+                #{replytext},
+            </if>
+            <if test="roleid != null">
+                #{roleid},
+            </if>
+            <if test="starcount != null">
+                #{starcount},
+            </if>
+            <if test="replyfloor != null">
+
+                @floor,
+            </if>
+
+            <if test="replyObjectId != null">
+                #{replyObjectId},
+            </if>
+            <if test="replyObjectFloor!=null">
+                @pid,
+            </if>
+            <if test="userid != null">
+                #{userid},
+            </if>
+            <if test="replyObjectRoleid!=null">
+                @replyObjectRoleid,
+            </if>
+        </trim>
+    </insert>
+
+    <insert id="insertreplystar">
+
+        insert into userstar(replyid, userid)
+        values (#{replyid}, #{userid})
+    </insert>
+
+    <delete id="deletereplystar">
+
+        DELETE
+        FROM `root123`.`userstar`
+        WHERE `replyid` = #{replyid}
+          AND `userid` = #{userid};
+    </delete>
+
+
+    <update id="updateReadByReplyostid" parameterType="java.util.List">
+        UPDATE `reply` SET `replyObjectRead` = '1' WHERE `replyid` IN
+        <foreach collection="replyid" open="(" separator="," close=")" item="replyid">
+            #{replyid}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted" parameterType="java.util.List">
+        UPDATE `reply` SET `deleted` = '0' WHERE `replyid` IN
+        <foreach collection="replyid" open="(" separator="," close=")" item="replyid">
+            #{replyid}
+        </foreach>
+    </update>
+
+
+    <update id="updateByPrimaryKeySelective" parameterType="com.city.hcy.model.Reply">
+        update reply
+        <set>
+            <if test="postid != null">
+                postid = #{postid,jdbcType=INTEGER},
+            </if>
+            <if test="replytext != null">
+                replytext = #{replytext,jdbcType=VARCHAR},
+            </if>
+            <if test="replytime != null">
+                replytime = #{replytime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="roleid != null">
+                roleid = #{roleid,jdbcType=INTEGER},
+            </if>
+            <if test="starcount != null">
+                starcount = #{starcount,jdbcType=INTEGER},
+            </if>
+            <if test="userid != null">
+                userid = #{userid,jdbcType=INTEGER},
+            </if>
+
+
+        </set>
+        where replyid = #{replyid,jdbcType=INTEGER}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.city.hcy.model.Reply">
+        update reply
+        set postid    = #{postid,jdbcType=INTEGER},
+            replytext = #{replytext,jdbcType=VARCHAR},
+            replytime = #{replytime,jdbcType=TIMESTAMP},
+            roleid    = #{roleid,jdbcType=INTEGER},
+            starcount = #{starcount,jdbcType=INTEGER},
+            userid    = #{userid,jdbcType=INTEGER},
+
+
+            where replyid = #{replyid,jdbcType=INTEGER}
+    </update>
+
+    <update id="updateStarCount">
+        UPDATE `root123`.`reply`
+        SET `starcount` =
+                    (SELECT COUNT(*) FROM userstar WHERE replyid = #{replyid})
+        WHERE `replyid` = #{replyid};
+    </update>
+
+    <update id="deletereply">
+        UPDATE reply  SET `deleted` = '1' WHERE `replyid` = #{replyid};
+    </update>
+</mapper>

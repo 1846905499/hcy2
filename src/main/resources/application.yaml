@@ -1,0 +1,46 @@
+server:
+  # 端口号
+  port: 7777
+redis:
+  host: localhost
+  port: 6379
+  timeout: 5000
+  database: 0
+  jedis:
+    pool:
+      max-idle: 8
+      max-wait:
+      min-idle: 0
+spring:
+  #配置数据源http://81.69.38.98
+  datasource:
+    url: jdbc:mysql://1.117.149.114:3306/root123?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&allowMultiQueries=true
+    username: root123
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+
+  servlet:
+    #文件上传配置
+    multipart:
+      enabled: true
+      file-size-threshold: 0
+      max-file-size: 20MB
+      max-request-size: 30MB
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+
+  mvc:
+    format:
+      date: yyyy-MM-dd HH:mm:ss
+
+#Mybatis配置
+mybatis-plus:
+
+  mapper-locations: mapper/*.xml
+  type-aliases-package: com.city.hcy.model
+  configuration:
+    cache-enabled: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    use-generated-keys: true

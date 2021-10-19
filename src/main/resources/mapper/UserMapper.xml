@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.city.hcy.mapper.UserMapper">
+  <resultMap id="BaseResultMap" type="com.city.hcy.model.User">
+    <id column="userid" jdbcType="INTEGER" property="userid" />
+    <result column="userphone" jdbcType="VARCHAR" property="userphone" />
+    <result column="userpassword" jdbcType="VARCHAR" property="userpassword" />
+    <result column="silencetime" property="silencetime"></result>
+  </resultMap>
+
+  <select id="selectByPrimaryKey"  resultMap="BaseResultMap">
+    select 
+   *
+    from user
+    where userphone = #{userphone}
+  </select>
+
+  <update id="updateByPrimaryKey" parameterType="com.city.hcy.model.User">
+    update user
+    set silencetime = #{silencetime}
+    where userid = #{userid,jdbcType=INTEGER}
+  </update>
+
+
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from user
+    where userid = #{userid,jdbcType=INTEGER}
+  </delete>
+
+
+  <insert id="insert" parameterType="com.city.hcy.model.User">
+    insert into user (userid, userphone, userpassword
+      )
+    values (#{userid}, #{userphone}, #{userpassword}
+      )
+  </insert>
+
+
+  <insert id="insertSelective" parameterType="com.city.hcy.model.User">
+    insert into user
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="userid != null">
+        userid,
+      </if>
+      <if test="userphone != null">
+        userphone,
+      </if>
+      <if test="userpassword != null">
+        userpassword,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="userid != null">
+        #{userid,jdbcType=INTEGER},
+      </if>
+      <if test="userphone != null">
+        #{userphone},
+      </if>
+      <if test="userpassword != null">
+        #{userpassword,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+
+  <update id="updateByPrimaryKeySelective" parameterType="com.city.hcy.model.User">
+    update user
+    <set>
+      <if test="userphone != null">
+        userphone = #{userphone,jdbcType=BIGINT},
+      </if>
+      <if test="userpassword != null">
+        userpassword = #{userpassword,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where userid = #{userid,jdbcType=INTEGER}
+  </update>
+
+
+
+</mapper>

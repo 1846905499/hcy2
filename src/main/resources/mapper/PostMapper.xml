@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.city.hcy.mapper.PostMapper">
+    <resultMap id="BaseResultMap" type="com.city.hcy.model.Post">
+        <id column="postid" jdbcType="INTEGER" property="postid"/>
+        <result column="posttitle" jdbcType="VARCHAR" property="posttitle"/>
+        <result column="posttext" jdbcType="VARCHAR" property="posttext"/>
+        <result column="posttime" jdbcType="TIMESTAMP" property="posttime"/>
+        <result column="roleid" jdbcType="INTEGER" property="roleid"/>
+        <result column="commentcount" jdbcType="INTEGER" property="commentcount"/>
+        <result column="starcount" jdbcType="INTEGER" property="starcount"/>
+        <result column="userid" jdbcType="INTEGER" property="userid"/>
+
+        <result column="istop" jdbcType="INTEGER" property="istop"/>
+        <result column="recentreplytime" jdbcType="TIMESTAMP" property="recentreplytime"/>
+        <result column="collectioncount" property="collectioncount"></result>
+    </resultMap>
+
+    <resultMap id="BaseResultMapWithUser" type="Post" extends="BaseResultMap">
+        <association property="user" resultMap="com.city.hcy.mapper.UserMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMapWithCollection" type="Post" extends="BaseResultMap">
+        <id column="postid" property="postid"></id>
+        <id column="userid" property="userid"></id>
+        <result column="collectiontime" property="collectiontime"></result>
+    </resultMap>
+
+    <resultMap id="BaseResultMapWithHistory" type="Post" extends="BaseResultMap">
+        <id column="postid" property="postid"></id>
+        <id column="userid" property="userid"></id>
+        <result column="historytime" property="historytime"></result>
+    </resultMap>
+
+    <resultMap id="BaseResultMapWithStar" type="Post" extends="BaseResultMap">
+        <id column="userstarid"></id>
+        <id column="postid" property="postid"></id>
+        <id column="replyid" property="replyid"></id>
+        <id column="userid" property="userid"></id>
+        <result column="startime" property="startime"></result>
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+        postid
+        , posttitle, posttext, posttime, roleid, commentcount, starcount, userid,istop
+    </sql>
+
+
+    <select id="selectCollectionListByAllWithPage" resultMap="BaseResultMapWithCollection">
+        SELECT p.*, uc.*
+        FROM post p
+                 INNER JOIN `usercollection` uc ON uc.postid = p.postid
+        WHERE uc.userid = #{userid} and p.deleted=0
+        ORDER BY collectiontime DESC
+        limit #{start}
+            , #{rows}
+    </select>
+
+    <select id="selectCollectionCountByAll" resultType="_int">
+        select count(*)
+        from usercollection
+        where userid = #{userid}
+
+    </select>
+
+    <select id="selectHistoryListByAllWithPage" resultMap="BaseResultMapWithHistory">
+        SELECT p.*, uc.*
+        FROM post p
+                 INNER JOIN `userbrowsehistory` uc ON uc.postid = p.postid
+        WHERE uc.userid = #{userid}
+        order by uc.historytime desc
+            limit #{start}
+               , #{rows}
+    </select>
+
+    <select id="selectHistoryCountByAll" resultType="java.lang.Integer">
+        select count(*)
+        from userbrowsehistory
+        where userid = #{userid}
+    </select>
+
+    <!--按点赞数-->
+    <select id="selectListByAllWithPageOrderByStar" resultMap="BaseResultMapWithUser">
+
+        SELECT p.*, u.*
+        FROM post p
+                 INNER JOIN USER u ON p.userid = u.userid
+        where istop=0
+          and deleted=0
+        ORDER BY starcount DESC limit #{start}, #{rows}
+    </select>
+
+
+<!--    selectListByAllWithPageOrderByCollection-->
+    <select id="selectListByAllWithPageOrderByCollection" resultMap="BaseResultMapWithUser">
+
+        SELECT p.*, u.*
+        FROM post p
+                 INNER JOIN USER u ON p.userid = u.userid
+        where istop=0
+          and deleted=0
+        ORDER BY collectioncount DESC limit #{start}, #{rows}
+    </select>
+
+
+
+    <!--    按时间顺序-->
+    <select id="selectListByAllWithPage" resultMap="BaseResultMapWithUser">
+        SELECT p.*, u.*
+        FROM post p
+                 INNER JOIN USER u ON p.userid = u.userid
+
+        where istop=0
+        and deleted=0
+        ORDER BY recentreplytime DESC limit #{start}, #{rows}
+    </select>
+
+    <select id="selectCountByAll" resultType="_int">
+        select count(*)
+        from post where deleted=0
+    </select>
+
+    <select id="selectListByAllWithPageDeleted" resultMap="BaseResultMapWithUser">
+        SELECT p.*, u.*
+        FROM post p
+                 INNER JOIN USER u ON p.userid = u.userid
+
+        where  deleted=1
+        ORDER BY posttime DESC limit #{start}, #{rows}
+    </select>
+    <select id="selectCountByAllDeleted" resultType="_int">
+        select count(*)
+        from post where deleted=1
+    </select>
+
+    <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from post
+        where postid = #{postid,jdbcType=INTEGER}
+    </select>
+
+
+    <select id="selectListByIdWithPage" resultMap="BaseResultMapWithUser">
+        SELECT p.*, u.*
+        FROM post p
+                 INNER JOIN USER u ON p.userid = u.userid
+        WHERE u.userid = #{userid} and p.deleted=0
+        ORDER BY posttime DESC limit #{start}, #{rows}
+    </select>
+
+    <select id="selectByIdCountByAll" resultType="java.lang.Integer">
+        select count(*)
+        from post
+        where userid = #{userid} and deleted=0
+    </select>
+
+
+    <select id="selectStarList" resultMap="BaseResultMapWithStar">
+        select *
+        from userstar
+        where userid = #{userid}
+    </select>
+
+
+    <select id="selectpostid" resultType="java.lang.Integer">
+        SELECT postid
+        FROM post
+        where deleted=0
+          and istop=0
+        ORDER BY recentreplytime desc LIMIT 0,10000
+    </select>
+
+    <select id="selectpostidorderbytime" resultType="java.lang.Integer">
+        SELECT postid
+        FROM post
+        where deleted=0
+          and istop=0
+        ORDER BY posttime desc LIMIT 0,10000
+    </select>
+
+
+    <select id="selectpostidOrderByComment"  resultType="java.lang.Integer">
+        SELECT postid
+        FROM post
+
+        where deleted=0
+            and istop=0
+        ORDER BY Commentcount
+         desc LIMIT 0,10000
+
+    </select>
+
+    <select id="selectListByPostid" resultMap="BaseResultMapWithUser">
+        SELECT p.*, u.*
+        FROM post p
+        INNER JOIN USER u ON p.userid = u.userid
+
+        WHERE p.postid IN
+        <foreach collection="postid" open="(" separator="," close=")" item="postid">
+            #{postid}
+        </foreach>
+        and p.deleted=0
+
+        ORDER BY recentreplytime
+    </select>
+
+    <select id="selectListByPostidOrderByTime" resultMap="BaseResultMapWithUser">
+        SELECT p.*, u.*
+        FROM post p
+        INNER JOIN USER u ON p.userid = u.userid
+
+        WHERE p.postid IN
+        <foreach collection="postid" open="(" separator="," close=")" item="postid">
+            #{postid}
+        </foreach>
+        and p.deleted=0
+        ORDER BY commentcount
+    </select>
+
+
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+        delete
+        from post
+        where postid = #{postid,jdbcType=INTEGER}
+    </delete>
+
+
+    <insert id="insert" parameterType="com.city.hcy.model.Post">
+        insert into post (posttitle, posttext,
+                          roleid, userid)
+        values (#{posttitle,jdbcType=VARCHAR}, #{posttext,jdbcType=VARCHAR},
+                #{roleid,jdbcType=INTEGER}, #{userid,jdbcType=INTEGER})
+    </insert>
+
+
+    <!--    //添加到历史记录-->
+    <insert id="inserthistory">
+        insert into userbrowsehistory(postid, userid)
+        values (#{postid}, #{userid})
+
+    </insert>
+
+    <!--    updatehistorytime-->
+    <update id="updatehistorytime">
+        UPDATE `userbrowsehistory`
+        SET `historytime` = NOW()
+        WHERE `postid` = #{postid}
+          AND `userid` = #{userid};
+    </update>
+
+
+    <!--    //添加到收藏列表-->
+    <insert id="insertcollection">
+        insert into usercollection(postid, userid)
+        values (#{postid}, #{userid})
+
+    </insert>
+
+
+    <insert id="insertstar">
+        insert into userstar(postid, userid)
+        values (#{postid}, #{userid})
+    </insert>
+
+    <delete id="deletecollection">
+        DELETE FROM `root123`.`usercollection` WHERE `postid` = #{postid} AND `userid` =  #{userid};
+    </delete>
+
+    <delete id="deletestar">
+        DELETE FROM `root123`.`userstar` WHERE `postid` = #{postid} AND `userid` =  #{userid};
+    </delete>
+
+
+    <update id="updateRecentReplyTime" parameterType="com.city.hcy.model.Post">
+        UPDATE `post`
+        SET `recentreplytime` = (SELECT MAX(replytime) FROM reply WHERE postid = #{postid})
+        WHERE `postid` = #{postid};
+    </update>
+
+    <update id="updateCommentCount" parameterType="com.city.hcy.model.Post">
+        UPDATE `post`
+        SET `commentcount` = (SELECT COUNT(*) FROM reply WHERE postid = #{postid})
+        WHERE `postid` = #{postid};
+    </update>
+
+    <update id="updateCollectionCount" parameterType="com.city.hcy.model.Post">
+        UPDATE `post`
+        SET `collectioncount` = (SELECT COUNT(*) FROM usercollection WHERE postid =  #{postid})
+        WHERE `postid` = #{postid};
+    </update>
+
+    <update id="updateByPrimaryKeySelective" parameterType="com.city.hcy.model.Post">
+        update post
+        <set>
+            <if test="posttitle != null">
+                posttitle = #{posttitle,jdbcType=VARCHAR},
+            </if>
+            <if test="posttext != null">
+                posttext = #{posttext,jdbcType=VARCHAR},
+            </if>
+            <if test="posttime != null">
+                posttime = #{posttime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="roleid != null">
+                roleid = #{roleid,jdbcType=INTEGER},
+            </if>
+            <if test="commentcount != null">
+                commentcount = #{commentcount,jdbcType=INTEGER},
+            </if>
+            <if test="starcount != null">
+                starcount = #{starcount,jdbcType=INTEGER},
+            </if>
+            <if test="userid != null">
+                userid = #{userid,jdbcType=INTEGER},
+            </if>
+
+            <if test="istop != null">
+                istop = #{istop,jdbcType=INTEGER},
+            </if>
+        </set>
+        where postid = #{postid,jdbcType=INTEGER}
+    </update>
+
+    <update id="updateStarCount">
+        UPDATE `root123`.`post`
+        SET `starcount` =
+                    (SELECT COUNT(*) FROM userstar WHERE postid = #{postid})
+        WHERE `postid` = #{postid};
+    </update>
+
+    <update id="updateistop">
+        UPDATE `post`
+        SET `istop` = '1'
+        WHERE `postid` = #{postid};
+    </update>
+
+
+    <update id="deletepost">
+        UPDATE `post` SET `deleted` = '1' WHERE `postid` = #{postid};
+    </update>
+
+    <update id="updateDeleted">
+        UPDATE `post` SET `deleted` = '0' WHERE `postid` IN
+        <foreach collection="postid" open="(" separator="," close=")" item="postid">
+            #{postid}
+        </foreach>
+
+    </update>
+
+</mapper>
